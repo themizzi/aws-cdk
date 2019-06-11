@@ -6,6 +6,7 @@ import { CfnParameter } from './cfn-parameter';
 import { CLOUDFORMATION_TOKEN_RESOLVER, CloudFormationLang } from './cloudformation-lang';
 import { Construct, ConstructNode, IConstruct, ISynthesisSession } from './construct';
 import { Environment } from './environment';
+import { FileAsset, FileAssetProps } from './file-asset';
 import { HashedAddressingScheme, IAddressingScheme, LogicalIDs } from './logical-id';
 import { resolve } from './resolve';
 import { makeUniqueId } from './uniqueid';
@@ -428,6 +429,24 @@ export class Stack extends Construct implements ITaggable {
   }
 
   /**
+   * Adds an asset to this stack.
+   *
+   * Normally you'd want to use the `@aws-cdk/assets` or the `assets-doccker`
+   * libraries to reference files or docker images. This is the low-level mechanism
+   * that binds an asset to a stack.
+   */
+  public addFileAsset(options: FileAssetProps): FileAsset {
+    // assets are singletonians based on source hash and packaging type
+    const namespace = `asset.${options.packaging}.${options.assetPath}`;
+    const exists = this.node.tryFindChild(namespace);
+    if (exists) {
+      return exists as FileAsset; // return existing asset
+    }
+
+    return new FileAsset(this, namespace, options);
+  }
+
+  /**
    * Validate stack name
    *
    * CloudFormation stack names can include dashes in addition to the regular identifier
@@ -481,8 +500,9 @@ export class Stack extends Construct implements ITaggable {
 
     // write the CloudFormation template as a JSON file
     const outPath = path.join(builder.outdir, template);
-    fs.writeFileSync(outPath, JSON.stringify(this._toCloudFormation(), undefined, 2));
+    fs.writeFileSync(outPath, JSON.stringify(this.toCloudFormation(), undefined, 2));
 
+    // emit a CFN stack artifact only if this is a non-nested stack.
     const deps = this.dependencies.map(s => s.name);
     const meta = this.collectMetadata();
 
@@ -508,10 +528,8 @@ export class Stack extends Construct implements ITaggable {
   /**
    * Returns the CloudFormation template for this stack by traversing
    * the tree and invoking _toCloudFormation() on all Entity objects.
-   *
-   * @internal
    */
-  protected _toCloudFormation() {
+  protected toCloudFormation() {
     // before we begin synthesis, we shall lock this stack, so children cannot be added
     this.node.lock();
 

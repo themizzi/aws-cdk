@@ -1,6 +1,7 @@
 import iam = require('@aws-cdk/aws-iam');
 import s3 = require('@aws-cdk/aws-s3');
 import cdk = require('@aws-cdk/cdk');
+import { Stack } from '@aws-cdk/cdk';
 import cxapi = require('@aws-cdk/cx-api');
 import fs = require('fs');
 import path = require('path');
@@ -132,49 +133,20 @@ export class Asset extends cdk.Construct implements IAsset {
     // add parameters for s3 bucket and s3 key. those will be set by
     // the toolkit or by CI/CD when the stack is deployed and will include
     // the name of the bucket and the S3 key where the code lives.
-
-    const bucketParam = new cdk.CfnParameter(this, 'S3Bucket', {
-      type: 'String',
-      description: `S3 bucket for asset "${this.node.path}"`,
+    const fileAsset = Stack.of(this).addFileAsset({
+      packaging: props.packaging,
+      assetPath: this.assetPath
     });
 
-    const keyParam = new cdk.CfnParameter(this, 'S3VersionKey', {
-      type: 'String',
-      description: `S3 key for asset version "${this.node.path}"`
-    });
-
-    const hashParam = new cdk.CfnParameter(this, 'ArtifactHash', {
-      description: `Artifact hash for asset "${this.node.path}"`,
-      type: 'String',
-    });
-
-    this.s3BucketName = bucketParam.stringValue;
-    this.s3Prefix = cdk.Fn.select(0, cdk.Fn.split(cxapi.ASSET_PREFIX_SEPARATOR, keyParam.stringValue)).toString();
-    const s3Filename = cdk.Fn.select(1, cdk.Fn.split(cxapi.ASSET_PREFIX_SEPARATOR, keyParam.stringValue)).toString();
-    this.s3ObjectKey = `${this.s3Prefix}${s3Filename}`;
-    this.artifactHash = hashParam.stringValue;
+    this.s3BucketName = fileAsset.s3BucketName;
+    this.s3Prefix = fileAsset.s3Prefix;
+    this.s3ObjectKey = fileAsset.s3ObjectKey;
+    this.artifactHash = fileAsset.artifactHash;
 
     this.bucket = s3.Bucket.fromBucketName(this, 'AssetBucket', this.s3BucketName);
 
     // form the s3 URL of the object key
     this.s3Url = this.bucket.urlForObject(this.s3ObjectKey);
-
-    // attach metadata to the lambda function which includes information
-    // for tooling to be able to package and upload a directory to the
-    // s3 bucket and plug in the bucket name and key in the correct
-    // parameters.
-    const asset: cxapi.FileAssetMetadataEntry = {
-      path: this.assetPath,
-      id: this.node.uniqueId,
-      packaging: props.packaging,
-      sourceHash: this.sourceHash,
-
-      s3BucketParameter: bucketParam.logicalId,
-      s3KeyParameter: keyParam.logicalId,
-      artifactHashParameter: hashParam.logicalId,
-    };
-
-    this.node.addMetadata(cxapi.ASSET_METADATA, asset);
 
     for (const reader of (props.readers || [])) {
       this.grantRead(reader);

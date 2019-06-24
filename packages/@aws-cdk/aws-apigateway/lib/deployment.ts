@@ -1,4 +1,4 @@
-import { Construct, DeletionPolicy, Resource, Stack, Token } from '@aws-cdk/cdk';
+import { CfnDeletionPolicy, Construct, Lazy, Resource, Stack } from '@aws-cdk/core';
 import crypto = require('crypto');
 import { CfnDeployment, CfnDeploymentProps } from './apigateway.generated';
 import { IRestApi } from './restapi';
@@ -72,11 +72,11 @@ export class Deployment extends Resource {
     });
 
     if (props.retainDeployments) {
-      this.resource.options.deletionPolicy = DeletionPolicy.Retain;
+      this.resource.options.deletionPolicy = CfnDeletionPolicy.RETAIN;
     }
 
     this.api = props.api;
-    this.deploymentId = new Token(() => this.resource.deploymentId).toString();
+    this.deploymentId = Lazy.stringValue({ produce: () => this.resource.ref });
   }
 
   /**
@@ -99,7 +99,7 @@ class LatestDeploymentResource extends CfnDeployment {
   constructor(scope: Construct, id: string, props: CfnDeploymentProps) {
     super(scope, id, props);
 
-    this.originalLogicalId = Stack.of(this).logicalIds.getLogicalId(this);
+    this.originalLogicalId = Stack.of(this).getLogicalId(this);
   }
 
   /**

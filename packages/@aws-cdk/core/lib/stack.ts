@@ -463,11 +463,12 @@ export class Stack extends Construct implements ITaggable {
   }
 
   /**
-   * Adds an asset to this stack.
+   * Adds a file asset to this stack.
    *
-   * Normally you'd want to use the `@aws-cdk/assets` or the `assets-doccker`
-   * libraries to reference files or docker images. This is the low-level mechanism
-   * that binds an asset to a stack.
+   * Normally you'd want to use the `@aws-cdk/aws-s3-assets` or the
+   * `@aws-cdk/aws-ecr-assets` libraries to reference files or docker images.
+   * This is the low-level mechanism that updates the stack's cloud assembly
+   * manifest to include metadata information about a file asset.
    */
   public addFileAsset(options: FileAssetProps): FileAsset {
     // assets are singletonians based on source hash and packaging type

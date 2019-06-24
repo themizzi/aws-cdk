@@ -1,4 +1,4 @@
-import { Construct, ISynthesisSession, Stack } from '@aws-cdk/cdk';
+import { Construct, ISynthesisSession, Stack } from '@aws-cdk/core';
 import fs = require('fs');
 import path = require('path');
 import { CfnStack } from './cloudformation.generated';

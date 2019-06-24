@@ -1,7 +1,7 @@
 import cxapi = require('@aws-cdk/cx-api');
+import { Fn } from './cfn-fn';
 import { CfnParameter } from './cfn-parameter';
 import { Construct } from './construct';
-import { Fn } from './fn';
 import { Stack } from './stack';
 
 export interface FileAssetProps {
@@ -59,11 +59,11 @@ export class FileAsset extends Construct {
       type: 'String',
     });
 
-    this.s3BucketName = bucketParam.stringValue;
-    this.s3Prefix = Fn.select(0, Fn.split(cxapi.ASSET_PREFIX_SEPARATOR, keyParam.stringValue)).toString();
-    const s3Filename = Fn.select(1, Fn.split(cxapi.ASSET_PREFIX_SEPARATOR, keyParam.stringValue)).toString();
+    this.s3BucketName = bucketParam.valueAsString;
+    this.s3Prefix = Fn.select(0, Fn.split(cxapi.ASSET_PREFIX_SEPARATOR, keyParam.valueAsString)).toString();
+    const s3Filename = Fn.select(1, Fn.split(cxapi.ASSET_PREFIX_SEPARATOR, keyParam.valueAsString)).toString();
     this.s3ObjectKey = `${this.s3Prefix}${s3Filename}`;
-    this.artifactHash = hashParam.stringValue;
+    this.artifactHash = hashParam.valueAsString;
 
     // attach metadata to the lambda function which includes information
     // for tooling to be able to package and upload a directory to the

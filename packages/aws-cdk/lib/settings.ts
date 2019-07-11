@@ -225,15 +225,18 @@ export class Settings {
     const context: any = {};
 
     for (const assignment of ((argv as any).context || [])) {
-      const parts = assignment.split('=', 2);
-      if (parts.length === 2) {
-        debug('CLI argument context: %s=%s', parts[0], parts[1]);
-        if (parts[0].match(/^aws:.+/)) {
-          throw new Error(`User-provided context cannot use keys prefixed with 'aws:', but ${parts[0]} was provided.`);
-        }
-        context[parts[0]] = parts[1];
+      const parts = [];
+                               
+      if (assignment.indexOf('=') >= 1) {
+          parts[0] = assignment.substring(0, assignment.indexOf('='));
+          parts[1] = assignment.substring(assignment.indexOf('=') + 1);
+          debug('CLI argument context: %s=%s', parts[0], parts[1]);
+          if (parts[0].match(/^aws:.+/)) {
+            throw new Error(`User-provided context cannot use keys prefixed with 'aws:', but ${parts[0]} was provided.`);
+          }
+          context[parts[0]] = parts[1];
       } else {
-        warning('Context argument is not an assignment (key=value): %s', assignment);
+          warning('Context argument is not an assignment (key=value): %s', assignment);
       }
     }
     return context;
@@ -243,15 +246,18 @@ export class Settings {
     const tags: Tag[] = [];
 
     for (const assignment of ((argv as any).tags || [])) {
-      const parts = assignment.split('=', 2);
-      if (parts.length === 2) {
-        debug('CLI argument tags: %s=%s', parts[0], parts[1]);
-        tags.push({
-         Key: parts[0],
-         Value: parts[1]
-        });
+      const parts = [];
+
+      if (assignment.indexOf('=') >= 1) {
+          parts[0] = assignment.substring(0, assignment.indexOf('='));
+          parts[1] = assignment.substring(assignment.indexOf('=') + 1);
+          debug('CLI argument tags: %s=%s', parts[0], parts[1]);
+          tags.push({
+           Key: parts[0],
+           Value: parts[1]
+          });
       } else {
-        warning('Tags argument is not an assignment (key=value): %s', assignment);
+          warning('Tags argument is not an assignment (key=value): %s', assignment);
       }
     }
     return tags;
